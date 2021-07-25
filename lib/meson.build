@@ -13,12 +13,17 @@ libappimage_dep = declare_dependency(
 )
 
 libruntime_src = files([
+    'detect.c',
+    'extract.c',
     'll_main.c',
+    'run.c',
+    'util.c',
 ])
 
 libruntime = static_library(
     'libruntime', libruntime_src,
     dependencies: [sf_dep],
+    c_args: ['-Werror'],
     link_with: [libappimage],
 )
 
