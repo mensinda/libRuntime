@@ -2,9 +2,11 @@ example_src = files([
     'runtime.c',
 ])
 
+ver = meson.project_version()
 example_runtime = executable(
     'raw_runtime', example_src,
-    dependencies: [libruntime_dep]
+    c_args: [f'-DPROJECT_VERSION="@ver@"'],
+    dependencies: [libruntime_dep],
 )
 
 custom_target(

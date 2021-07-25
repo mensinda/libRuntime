@@ -1,5 +1,6 @@
 /**************************************************************************
  *
+ * Copyright (c) 2021 Daniel Mensinger
  * Copyright (c) 2004-18 Simon Peter
  * Portions Copyright (c) 2007 Alexander Larsson
  *
@@ -29,8 +30,8 @@
 
 #define _GNU_SOURCE
 
-#ifndef GIT_COMMIT
-#define GIT_COMMIT "<UNDEFINED>"
+#ifndef PROJECT_VERSION
+#define PROJECT_VERSION "<UNDEFINED>"
 #endif
 
 #include <squashfuse.h>
@@ -272,7 +273,7 @@ int main(int argc, char *argv[]) {
     }
 
     if (arg && strcmp(arg, "appimage-version") == 0) {
-        fprintf(stderr, "Version: %s\n", GIT_COMMIT);
+        fprintf(stderr, "Version: %s\n", PROJECT_VERSION);
         exit(0);
     }
 
@@ -304,8 +305,8 @@ int main(int argc, char *argv[]) {
     // If there is an argument starting with appimage- (but not appimage-mount which is handled further down)
     // then stop here and print an error message
     if ((arg && strncmp(arg, "appimage-", 8) == 0) && (arg && strcmp(arg, "appimage-mount") != 0)) {
-        fprintf(stderr, "--%s is not yet implemented in version %s\n", arg, GIT_COMMIT);
-        exit(1);
+        fprintf(stderr, "--%s is not yet implemented in version %s\n", arg, PROJECT_VERSION);
+        exit(EXIT_EXECERROR);
     }
 
     // allocate enough memory (size of name won't exceed 60 bytes)
