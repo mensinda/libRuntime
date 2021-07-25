@@ -51,8 +51,8 @@ bool appimage_self_mount(appimage_context_t *const context,
                          const char *              mount_path,
                          appimage_cb_mounted       mounted_cb,
                          void *                    cb_user_data) {
-    int    dir_fd, res;
-    pid_t  pid;
+    int   dir_fd, res;
+    pid_t pid;
 
     if (pipe(keepalive_pipe) == -1) {
         perror("pipe error");
@@ -82,7 +82,7 @@ bool appimage_self_mount(appimage_context_t *const context,
         child_argv[1] = "-o";
         child_argv[2] = options;
         child_argv[3] = dir;
-        child_argv[4] = (char *)mount_path;  // Remove const
+        child_argv[4] = (char *)mount_path; // Remove const
 
         if (0 != fusefs_main(5, child_argv, fuse_mounted)) {
             printf("Cannot mount AppImage, please check your FUSE setup.\n");

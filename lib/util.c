@@ -138,9 +138,9 @@ char *appimage_generate_mount_path(appimage_context_t *const context, const char
         namelen = maxnamelen;
     }
 
-    const char * temp_base = prefix ? prefix : context->temp_base;
-    size_t templen   = strlen(temp_base);
-    char * mount_dir = malloc(templen + 8 + namelen + 6 + 1);
+    const char *temp_base = prefix ? prefix : context->temp_base;
+    size_t      templen   = strlen(temp_base);
+    char *      mount_dir = malloc(templen + 8 + namelen + 6 + 1);
 
     strcpy(mount_dir, temp_base);
     strcat(mount_dir, "/.mount_");
