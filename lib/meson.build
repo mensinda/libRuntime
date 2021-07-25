@@ -16,6 +16,7 @@ libruntime_src = files([
     'detect.c',
     'extract.c',
     'll_main.c',
+    'mount.c',
     'run.c',
     'util.c',
 ])

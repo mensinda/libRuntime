@@ -19,6 +19,7 @@ typedef struct appimage_context {
     ssize_t fs_offset; // The offset at which a filesystem image is expected = end of this ELF
     char *  appimage_path;
     char *  argv0_path;
+    char *  temp_base;
 } appimage_context_t;
 
 bool appimage_detect_context(appimage_context_t *context, int argc, char *argv[]);
@@ -27,6 +28,16 @@ bool appimage_is_writable_directory(char *str);
 bool appimage_starts_with(const char *pre, const char *str);
 bool appimage_mkdir_p(const char *const path);
 bool appimage_rm_recursive(const char *const path);
+
+// Generate a unique mount path. If prefix is NULL the default temporary directory is used
+char *appimage_generate_mount_path(appimage_context_t *const context, const char *const prefix);
+
+typedef void (*appimage_cb_mounted)(appimage_context_t *const, void *);
+
+bool appimage_self_mount(appimage_context_t *const context,
+                         const char *              mount_path,
+                         appimage_cb_mounted       mounted_cb,
+                         void *                    cb_user_data);
 
 bool appimage_self_extract(appimage_context_t *const context,
                            const char *const         _prefix,

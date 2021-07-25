@@ -13,6 +13,7 @@
 #include <errno.h>
 #include <sys/stat.h>
 #include <ftw.h>
+#include <libgen.h>
 
 #include "libruntime.h"
 
@@ -116,4 +117,40 @@ bool appimage_rm_recursive(const char *const path) {
     int rv = nftw(path, &_appimage_rm_recursive_callback, 0, FTW_DEPTH | FTW_MOUNT | FTW_PHYS);
 
     return rv == 0;
+}
+
+char *appimage_generate_mount_path(appimage_context_t *const context, const char *const prefix) {
+    const size_t maxnamelen = 6;
+
+    // when running for another AppImage, we should use that for building the mountpoint name instead
+    char *target_appimage = getenv("TARGET_APPIMAGE");
+
+    char *path_basename;
+    if (target_appimage != NULL) {
+        path_basename = basename(target_appimage);
+    } else {
+        path_basename = basename(context->appimage_path);
+    }
+
+    size_t namelen = strlen(path_basename);
+    // limit length of tempdir name
+    if (namelen > maxnamelen) {
+        namelen = maxnamelen;
+    }
+
+    const char * temp_base = prefix ? prefix : context->temp_base;
+    size_t templen   = strlen(temp_base);
+    char * mount_dir = malloc(templen + 8 + namelen + 6 + 1);
+
+    strcpy(mount_dir, temp_base);
+    strcat(mount_dir, "/.mount_");
+    strncat(mount_dir, path_basename, namelen);
+    strcat(mount_dir, "XXXXXX");
+    mount_dir[templen + 8 + namelen + 6] = 0; // null terminate destination
+
+    if (mkdtemp(mount_dir) == NULL) {
+        perror("create mount dir error");
+        return NULL;
+    }
+    return mount_dir;
 }

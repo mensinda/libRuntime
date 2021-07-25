@@ -48,5 +48,18 @@ bool appimage_detect_context(appimage_context_t *context, int argc, char *argv[]
     }
 
     context->fs_offset = offset;
+
+    // temporary directories are required in a few places
+    // therefore we implement the detection of the temp base dir at the top of the code to avoid redundancy
+    context->temp_base       = P_tmpdir;
+    const char *const TMPDIR = getenv("TMPDIR");
+    if (TMPDIR != NULL) {
+        // Yes this will leak memory, but should be fine for this use-case.
+        size_t len         = strlen(TMPDIR);
+        context->temp_base = malloc(len + 1);
+        strncpy(context->temp_base, TMPDIR, len);
+        context->temp_base[len] = '\0';
+    }
+
     return true;
 }

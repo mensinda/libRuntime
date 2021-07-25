@@ -56,32 +56,6 @@
 #include "libappimage/appimage_shared.h"
 #include "libappimage/md5.h"
 #include "libruntime.h"
-#include "private.h"
-
-static pid_t fuse_pid;
-static int   keepalive_pipe[2];
-
-static void *write_pipe_thread(void *arg) {
-    char c[32];
-    int  res;
-    //  sprintf(stderr, "Called write_pipe_thread");
-    memset(c, 'x', sizeof(c));
-    while (1) {
-        /* Write until we block, on broken pipe, exit */
-        res = write(keepalive_pipe[1], c, sizeof(c));
-        if (res == -1) {
-            kill(fuse_pid, SIGTERM);
-            break;
-        }
-    }
-    return NULL;
-}
-
-void fuse_mounted(void) {
-    pthread_t thread;
-    fuse_pid = getpid();
-    pthread_create(&thread, NULL, write_pipe_thread, keepalive_pipe);
-}
 
 char *getArg(int argc, char *argv[], char chr) {
     int i;
@@ -154,30 +128,35 @@ void portable_option(const char *arg, const char *appimage_path, const char *nam
     }
 }
 
-bool build_mount_point(char *mount_dir, const char *const argv0, char const *const temp_base, const size_t templen) {
-    const size_t maxnamelen = 6;
+typedef struct mount_data {
+    char * arg;
+    char * mount_dir;
+    int    argc;
+    char **argv;
+} mount_data_t;
 
-    // when running for another AppImage, we should use that for building the mountpoint name instead
-    char *target_appimage = getenv("TARGET_APPIMAGE");
+void mounted_cb(appimage_context_t *const context, void *data_raw) {
+    mount_data_t *data = (mount_data_t *)data_raw;
+    if (data->arg && strcmp(data->arg, "appimage-mount") == 0) {
+        char real_mount_dir[PATH_MAX];
 
-    char *path_basename;
-    if (target_appimage != NULL) {
-        path_basename = basename(target_appimage);
-    } else {
-        path_basename = basename(argv0);
+        if (realpath(data->mount_dir, real_mount_dir) == real_mount_dir) {
+            printf("%s\n", real_mount_dir);
+        } else {
+            printf("%s\n", data->mount_dir);
+        }
+
+        // stdout is, by default, buffered (unlike stderr), therefore in order to allow other processes to read
+        // the path from stdout, we need to flush the buffers now
+        // this is a less-invasive alternative to setbuf(stdout, NULL);
+        fflush(stdout);
+
+        for (;;) pause();
+
+        exit(0);
     }
 
-    size_t namelen = strlen(path_basename);
-    // limit length of tempdir name
-    if (namelen > maxnamelen) {
-        namelen = maxnamelen;
-    }
-
-    strcpy(mount_dir, temp_base);
-    strncpy(mount_dir + templen, "/.mount_", 8);
-    strncpy(mount_dir + templen + 8, path_basename, namelen);
-    strncpy(mount_dir + templen + 8 + namelen, "XXXXXX", 6);
-    mount_dir[templen + 8 + namelen + 6] = 0; // null terminate destination
+    appimage_execute_apprun(context, data->mount_dir, data->argc, data->argv, "--appimage", true);
 }
 
 int main(int argc, char *argv[]) {
@@ -186,21 +165,6 @@ int main(int argc, char *argv[]) {
 
     if (appimage_detect_context(&context, argc, argv) == false) {
         exit(EXIT_EXECERROR);
-    }
-
-    // temporary directories are required in a few places
-    // therefore we implement the detection of the temp base dir at the top of the code to avoid redundancy
-    char *temp_base = P_tmpdir;
-
-    {
-        const char *const TMPDIR = getenv("TMPDIR");
-        if (TMPDIR != NULL) {
-            // Yes this will leak memory, but should be fine for this use-case.
-            size_t len = strlen(TMPDIR);
-            temp_base  = malloc(len + 1);
-            strncpy(temp_base, TMPDIR, len);
-            temp_base[len] = '\0';
-        }
     }
 
     arg = getArg(argc, argv, '-');
@@ -267,8 +231,8 @@ int main(int argc, char *argv[]) {
             hexlified_digest = appimage_hexlify(digest.bytes, sizeof(digest.bytes));
         }
 
-        char *prefix = malloc(strlen(temp_base) + 20 + strlen(hexlified_digest) + 2);
-        strcpy(prefix, temp_base);
+        char *prefix = malloc(strlen(context.temp_base) + 20 + strlen(hexlified_digest) + 2);
+        strcpy(prefix, context.temp_base);
         strcat(prefix, "/appimage_extracted_");
         strcat(prefix, hexlified_digest);
         free(hexlified_digest);
@@ -344,116 +308,16 @@ int main(int argc, char *argv[]) {
         exit(1);
     }
 
-    int dir_fd, res;
-
-    size_t templen = strlen(temp_base);
-
     // allocate enough memory (size of name won't exceed 60 bytes)
-    char mount_dir[templen + 60];
+    char *       mount_dir = appimage_generate_mount_path(&context, NULL);
+    mount_data_t cb_data;
+    cb_data.arg       = arg;
+    cb_data.mount_dir = mount_dir;
+    cb_data.argc      = argc;
+    cb_data.argv      = argv;
 
-    build_mount_point(mount_dir, argv[0], temp_base, templen);
-
-    size_t mount_dir_size = strlen(mount_dir);
-    pid_t  pid;
-    char **real_argv;
-    int    i;
-
-    if (mkdtemp(mount_dir) == NULL) {
-        perror("create mount dir error");
+    if (!appimage_self_mount(&context, mount_dir, &mounted_cb, &cb_data)) {
         exit(EXIT_EXECERROR);
-    }
-
-    if (pipe(keepalive_pipe) == -1) {
-        perror("pipe error");
-        exit(EXIT_EXECERROR);
-    }
-
-    pid = fork();
-    if (pid == -1) {
-        perror("fork error");
-        exit(EXIT_EXECERROR);
-    }
-
-    if (pid == 0) {
-        /* in child */
-
-        char *child_argv[5];
-
-        /* close read pipe */
-        close(keepalive_pipe[0]);
-
-        char *dir = realpath(context.appimage_path, NULL);
-
-        char options[100];
-        sprintf(options, "ro,offset=%lu", context.fs_offset);
-
-        child_argv[0] = dir;
-        child_argv[1] = "-o";
-        child_argv[2] = options;
-        child_argv[3] = dir;
-        child_argv[4] = mount_dir;
-
-        if (0 != fusefs_main(5, child_argv, fuse_mounted)) {
-            char *title;
-            char *body;
-            printf("Cannot mount AppImage, please check your FUSE setup.\n");
-            printf("You might still be able to extract the contents of this AppImage \n"
-                   "if you run it with the --appimage-extract option. \n"
-                   "See https://github.com/AppImage/AppImageKit/wiki/FUSE \n"
-                   "for more information\n");
-        };
-    } else {
-        /* in parent, child is $pid */
-        int c;
-
-        /* close write pipe */
-        close(keepalive_pipe[1]);
-
-        /* Pause until mounted */
-        read(keepalive_pipe[0], &c, 1);
-
-        /* Fuse process has now daemonized, reap our child */
-        waitpid(pid, NULL, 0);
-
-        dir_fd = open(mount_dir, O_RDONLY);
-        if (dir_fd == -1) {
-            perror("open dir error");
-            exit(EXIT_EXECERROR);
-        }
-
-        res = dup2(dir_fd, 1023);
-        if (res == -1) {
-            perror("dup2 error");
-            exit(EXIT_EXECERROR);
-        }
-        close(dir_fd);
-
-        real_argv = malloc(sizeof(char *) * (argc + 1));
-        for (i = 0; i < argc; i++) {
-            real_argv[i] = argv[i];
-        }
-        real_argv[i] = NULL;
-
-        if (arg && strcmp(arg, "appimage-mount") == 0) {
-            char real_mount_dir[PATH_MAX];
-
-            if (realpath(mount_dir, real_mount_dir) == real_mount_dir) {
-                printf("%s\n", real_mount_dir);
-            } else {
-                printf("%s\n", mount_dir);
-            }
-
-            // stdout is, by default, buffered (unlike stderr), therefore in order to allow other processes to read
-            // the path from stdout, we need to flush the buffers now
-            // this is a less-invasive alternative to setbuf(stdout, NULL);
-            fflush(stdout);
-
-            for (;;) pause();
-
-            exit(0);
-        }
-
-        appimage_execute_apprun(&context, mount_dir, argc, argv, "--appimage", true);
     }
 
     return 0;

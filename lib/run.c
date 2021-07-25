@@ -26,7 +26,7 @@ void appimage_execute_apprun(appimage_context_t *const context,
     strcat(apprun_path, APPRUN_NAME);
 
     // create copy of argument list without the --appimage-extract-and-run parameter
-    char *new_argv[argc + 1];
+    char **new_argv      = malloc(sizeof(char *) * (argc + 1));
     int   new_argc       = 0;
     new_argv[new_argc++] = strdup(apprun_path);
     for (int i = 1; i < argc; ++i) {
