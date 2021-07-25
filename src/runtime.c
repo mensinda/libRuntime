@@ -25,7 +25,7 @@
  *
  **************************************************************************/
 
-#ident "AppImage by Simon Peter, http://appimage.org/"
+// #ident "AppImage by Simon Peter, http://appimage.org/"
 
 #define _GNU_SOURCE
 
@@ -43,6 +43,7 @@
 #include <stdlib.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/wait.h>
 #include <fcntl.h>
 #include <ftw.h>
 #include <stdio.h>
@@ -51,7 +52,6 @@
 #include <unistd.h>
 #include <pthread.h>
 #include <errno.h>
-#include <wait.h>
 #include <fnmatch.h>
 
 #include "libappimage/appimage_shared.h"
@@ -127,9 +127,6 @@ sqfs_err private_sqfs_stat(sqfs *fs, sqfs_inode *inode, struct stat *st) {
 }
 
 /* ================= End ELF parsing */
-
-extern int fusefs_main(int argc, char *argv[], void (*mounted) (void));
-// extern void ext2_quit(void);
 
 static pid_t fuse_pid;
 static int keepalive_pipe[2];

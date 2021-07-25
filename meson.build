@@ -3,8 +3,10 @@ project('modularRuntime', ['c'],
   license : 'MIT',
   meson_version : '>=0.58.0',
   default_options : [
-    'b_lto=False',
+    'b_lto=true',
     'default_library=static',
+    'warning_level=3',
+    'optimization=s',
 
     'liblzma:warning_level=0',
     'lz4:warning_level=0',

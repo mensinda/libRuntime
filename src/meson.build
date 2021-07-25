@@ -1,11 +1,10 @@
 example_src = files([
-    'll_main.c',
     'runtime.c',
 ])
 
 example_runtime = executable(
     'raw_runtime', example_src,
-    dependencies: [libappimage_dep, sf_dep]
+    dependencies: [libruntime_dep]
 )
 
 custom_target(
