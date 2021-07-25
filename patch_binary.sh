@@ -73,7 +73,7 @@ fi
 mkdir -p "$PRIVATE_DIR"
 
 for i in 16 1024 8192; do
-    $DD if=/dev/zero bs=1 count=$i of="$PRIVATE_DIR/${i}_zeros"
+    $DD if=/dev/zero bs=1 count=$i of="$PRIVATE_DIR/${i}_zeros" &> /dev/null
 done
 
 cp "$INPUT" "$PRIVATE_DIR/temp0"
