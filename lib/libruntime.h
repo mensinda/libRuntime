@@ -26,6 +26,7 @@ bool appimage_detect_context(appimage_context_t *context, int argc, char *argv[]
 bool appimage_is_writable_directory(char *str);
 bool appimage_starts_with(const char *pre, const char *str);
 bool appimage_mkdir_p(const char *const path);
+bool appimage_rm_recursive(const char *const path);
 
 bool appimage_self_extract(appimage_context_t *const context,
                            const char *const         _prefix,

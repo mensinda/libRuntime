@@ -3,6 +3,8 @@
 // Copyright 2021    Daniel Mensinger
 // SPDX-License-Identifier: MIT
 
+#define _XOPEN_SOURCE 500
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
@@ -10,6 +12,7 @@
 #include <string.h>
 #include <errno.h>
 #include <sys/stat.h>
+#include <ftw.h>
 
 #include "libruntime.h"
 
@@ -69,4 +72,48 @@ bool appimage_mkdir_p(const char *const path) {
 cleanup:
     free(_path);
     return errno == 0 ? true : false;
+}
+
+int _appimage_rm_recursive_callback(const char *path, const struct stat *stat, const int type, struct FTW *ftw) {
+    (void)stat;
+    (void)ftw;
+
+    switch (type) {
+        case FTW_NS:
+        case FTW_DNR: fprintf(stderr, "%s: ftw error: %s\n", path, strerror(errno)); return 1;
+
+        case FTW_D:
+            // ignore directories at first, will be handled by FTW_DP
+            break;
+
+        case FTW_F:
+        case FTW_SL:
+        case FTW_SLN:
+            if (remove(path) != 0) {
+                fprintf(stderr, "Failed to remove %s: %s\n", path, strerror(errno));
+                return false;
+            }
+            break;
+
+        case FTW_DP:
+            if (rmdir(path) != 0) {
+                fprintf(stderr, "Failed to remove directory %s: %s\n", path, strerror(errno));
+                return false;
+            }
+            break;
+
+        default: fprintf(stderr, "Unexpected fts_info\n"); return 1;
+    }
+
+    return 0;
+}
+
+bool appimage_rm_recursive(const char *const path) {
+    // FTW_DEPTH: perform depth-first search to make sure files are deleted before the containing directories
+    // FTW_MOUNT: prevent deletion of files on other mounted filesystems
+    // FTW_PHYS: do not follow symlinks, but report symlinks as such; this way, the symlink targets, which might point
+    //           to locations outside path will not be deleted accidentally (attackers might abuse this)
+    int rv = nftw(path, &_appimage_rm_recursive_callback, 0, FTW_DEPTH | FTW_MOUNT | FTW_PHYS);
+
+    return rv == 0;
 }
