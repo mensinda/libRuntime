@@ -3,6 +3,10 @@
 #include <stdint.h>
 #include <stdio.h>
 
+#ifdef	__cplusplus
+extern "C" {
+#endif
+
 typedef struct {
     uint32_t lo;
     uint32_t hi;
@@ -31,3 +35,7 @@ void Md5Finalise(Md5Context *ctx, MD5_HASH *digest);
 
 // create new context, add data from buffer to it, and calculate digest
 void Md5Calculate(void const *Buffer, uint32_t BufferSize, MD5_HASH *Digest);
+
+#ifdef	__cplusplus
+}
+#endif

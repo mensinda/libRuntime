@@ -6,6 +6,8 @@ project('modularRuntime', ['c'],
     'b_lto=true',
     'default_library=static',
     'warning_level=3',
+    'werror=true',
+    'debug=false',
     'optimization=s',
 
     'liblzma:warning_level=0',

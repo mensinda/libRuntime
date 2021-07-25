@@ -212,7 +212,7 @@ int appimage_print_hex(char *fname, unsigned long offset, unsigned long length) 
         return 1;
     }
 
-    for (long long k = 0; k < length && data[k] != '\0'; k++) {
+    for (unsigned long k = 0; k < length && data[k] != '\0'; k++) {
         printf("%x", data[k]);
     }
 

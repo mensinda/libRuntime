@@ -7,6 +7,10 @@
 #include <stdint.h>
 #include <sys/types.h>
 
+#ifdef	__cplusplus
+extern "C" {
+#endif
+
 /* Exit status to use when launching an AppImage fails.
  * For applications that assign meanings to exit status codes (e.g. rsync),
  * we avoid "cluttering" pre-defined exit status codes by using 127 which
@@ -51,3 +55,7 @@ void appimage_execute_apprun(appimage_context_t *const context,
                              char *                    argv[],
                              const char *const         argument_skip_prefix,
                              bool                      enable_portable_support);
+
+#ifdef	__cplusplus
+}
+#endif

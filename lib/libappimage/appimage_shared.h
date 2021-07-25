@@ -6,6 +6,8 @@ extern "C" {
 
 #include <stdbool.h>
 #include <stdlib.h>
+#include <stdint.h>
+#include <sys/types.h>
 
 /*
  * Return the offset, and the length of an ELF section with a given name in a given ELF file
@@ -22,7 +24,7 @@ int appimage_print_binary(char *fname, unsigned long offset, unsigned long lengt
  * Creates hexadecimal representation of a byte array. Allocates a new char array (string) with the correct size that
  * needs to be free()d.
  */
-char *appimage_hexlify(const char *bytes, size_t numBytes);
+char *appimage_hexlify(const uint8_t *bytes, size_t numBytes);
 
 /*
  * Calculate MD5 digest of AppImage file, skipping the signature and digest sections.
