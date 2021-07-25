@@ -10,16 +10,19 @@ extern "C" {
 /*
  * Return the offset, and the length of an ELF section with a given name in a given ELF file
  */
-bool appimage_get_elf_section_offset_and_length(const char* fname, const char* section_name, unsigned long* offset, unsigned long* length);
+bool appimage_get_elf_section_offset_and_length(const char *   fname,
+                                                const char *   section_name,
+                                                unsigned long *offset,
+                                                unsigned long *length);
 
-int appimage_print_hex(char* fname, unsigned long offset, unsigned long length);
-int appimage_print_binary(char* fname, unsigned long offset, unsigned long length);
+int appimage_print_hex(char *fname, unsigned long offset, unsigned long length);
+int appimage_print_binary(char *fname, unsigned long offset, unsigned long length);
 
 /*
  * Creates hexadecimal representation of a byte array. Allocates a new char array (string) with the correct size that
  * needs to be free()d.
  */
-char* appimage_hexlify(const char* bytes, size_t numBytes);
+char *appimage_hexlify(const char *bytes, size_t numBytes);
 
 /*
  * Calculate MD5 digest of AppImage file, skipping the signature and digest sections.
@@ -36,10 +39,9 @@ char* appimage_hexlify(const char* bytes, size_t numBytes);
  *
  * Please beware that this calculation is only available for type 2 AppImages.
  */
-bool appimage_type2_digest_md5(const char* fname, char* digest);
+bool appimage_type2_digest_md5(const char *fname, char *digest);
 
-
-ssize_t appimage_get_elf_size(const char* fname);
+ssize_t appimage_get_elf_size(const char *fname);
 
 #ifdef __cplusplus
 }

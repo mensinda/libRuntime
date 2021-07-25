@@ -26,4 +26,4 @@
 
 #pragma once
 
-int fusefs_main(int argc, char *argv[], void (*mounted) (void));
+int fusefs_main(int argc, char *argv[], void (*mounted)(void));
