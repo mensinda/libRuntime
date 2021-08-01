@@ -5,6 +5,8 @@
 
 #include "libruntime.h"
 
+#define _GNU_SOURCE
+
 #include <squashfuse.h>
 #include <squashfs_fs.h>
 #include <nonstd.h>

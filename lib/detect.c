@@ -3,9 +3,10 @@
 // Copyright 2021    Daniel Mensinger
 // SPDX-License-Identifier: MIT
 
-#include "libruntime.h"
-
 #define _DEFAULT_SOURCE
+#include <features.h>
+
+#include "libruntime.h"
 
 #include <stddef.h>
 #include <stdlib.h>

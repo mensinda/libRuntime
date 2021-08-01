@@ -29,6 +29,15 @@
 // #ident "AppImage by Simon Peter, http://appimage.org/"
 
 #define _GNU_SOURCE
+#define _DEFAULT_SOURCE
+#define _XOPEN_SOURCE 500
+#include <features.h>
+
+// Work around some differences between glibc and musl
+#if __has_include(<linux/types.h>)
+#include <linux/types.h>
+#define HAVE_LINUX_TYPES_LE16
+#endif
 
 #ifndef PROJECT_VERSION
 #define PROJECT_VERSION "<UNDEFINED>"

@@ -3,7 +3,9 @@
 // Copyright 2021    Daniel Mensinger
 // SPDX-License-Identifier: MIT
 
+#define _DEFAULT_SOURCE
 #define _XOPEN_SOURCE 500
+#include <features.h>
 
 #include <stdio.h>
 #include <stdlib.h>
