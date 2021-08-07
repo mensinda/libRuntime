@@ -1,4 +1,4 @@
-#!/usr/bin/bash
+#!/bin/bash
 
 DD="$(command -v dd)"
 OBJCOPY="$(command -v objcopy)"
